@@ -1732,12 +1732,16 @@ function reinit(){
 }
 
 // === SSE: Live Updates from Server ===
+function appUrl(path){
+  return new URL(String(path).replace(/^\//, ''), location.href).toString();
+}
+
 function connectSSE(){
   if (typeof EventSource === 'undefined') return;
   // Only connect if served from localhost (not file://)
   if (location.protocol === 'file:') return;
 
-  const es = new EventSource('/events');
+  const es = new EventSource(appUrl('events'));
   es.onmessage = (e) => {
     try {
       const msg = JSON.parse(e.data);
@@ -1794,7 +1798,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (canProbeApi && !hasInlineData) {
     // Server mode: always fetch live data from API (ignore any stale inline D)
-    fetch('/api/data')
+    fetch(appUrl('api/data'))
       .then(r => r.json())
       .then(data => { D = data; init(); connectSSE(); })
       .catch(() => {

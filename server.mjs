@@ -422,7 +422,7 @@ async function start() {
   ╚══════════════════════════════════════════════╝
   `);
 
-  const server = app.listen(port);
+  const server = app.listen(port, config.host);
 
   server.on('error', (err) => {
     if (err.code === 'EADDRINUSE') {
@@ -438,7 +438,7 @@ async function start() {
   });
 
   server.on('listening', async () => {
-    console.log(`[Crucix] Server running on http://localhost:${port}`);
+    console.log(`[Crucix] Server running on http://${config.host}:${port}`);
 
     // Auto-open browser
     // NOTE: On Windows, `start` in PowerShell is an alias for Start-Service, not cmd's start.
