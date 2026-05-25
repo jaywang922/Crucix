@@ -14,6 +14,7 @@ import { synthesize, generateIdeas } from './dashboard/inject.mjs';
 import { MemoryManager } from './lib/delta/index.mjs';
 import { createLLMProvider } from './lib/llm/index.mjs';
 import { generateLLMIdeas } from './lib/llm/ideas.mjs';
+import { applyChineseTranslations } from './lib/llm/translate.mjs';
 import { TelegramAlerter } from './lib/alerts/telegram.mjs';
 import { DiscordAlerter } from './lib/alerts/discord.mjs';
 
@@ -338,6 +339,11 @@ async function runSweepCycle() {
     const delta = memory.addRun(synthesized);
     synthesized.delta = delta;
 
+    synthesized.translation = await applyChineseTranslations(llmProvider, synthesized, config.translation);
+    if (synthesized.translation?.enabled) {
+      console.log(`[Crucix] Translation: ${synthesized.translation.applied} cached, ${synthesized.translation.generated} generated, ${synthesized.translation.pending} pending`);
+    }
+
     // 5. LLM-powered trade ideas (LLM-only feature) — isolated so failures don't kill sweep
     if (llmProvider?.isConfigured) {
       try {
@@ -453,6 +459,7 @@ async function start() {
     try {
       const existing = JSON.parse(readFileSync(join(RUNS_DIR, 'latest.json'), 'utf8'));
       const data = await synthesize(existing);
+      data.translation = await applyChineseTranslations(llmProvider, data, config.translation);
       currentData = data;
       console.log('[Crucix] Loaded existing data from runs/latest.json — dashboard ready instantly');
       broadcast({ type: 'update', data: currentData });

@@ -15,6 +15,15 @@ export default {
     baseUrl: process.env.OLLAMA_BASE_URL || null,
   },
 
+  translation: {
+    enabled: String(process.env.TRANSLATE_NEWS_ZH || '').toLowerCase() === 'true',
+    targetLocale: process.env.TRANSLATE_TARGET_LOCALE || 'zh-Hant',
+    cachePath: process.env.TRANSLATION_CACHE_PATH || './runs/translation-cache.zh.json',
+    maxItems: parseInt(process.env.TRANSLATION_MAX_ITEMS) || 30,
+    maxNewPerSweep: parseInt(process.env.TRANSLATION_MAX_NEW_PER_SWEEP) || 12,
+    timeoutMs: parseInt(process.env.TRANSLATION_TIMEOUT_MS) || 45000,
+  },
+
   telegram: {
     botToken: process.env.TELEGRAM_BOT_TOKEN || null,
     chatId: process.env.TELEGRAM_CHAT_ID || null,

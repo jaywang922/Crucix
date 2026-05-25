@@ -1450,7 +1450,7 @@ function renderLower(){
     const sc = srcClass(n.source);
     const age = n.timestamp ? getAge(n.timestamp) : '';
     const urlAttr = n.url ? ` data-url="${String(n.url).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"` : '';
-    const headline = localizedFeedText(n.headline || '', 180);
+    const headline = localizedFeedText(n.headlineZh || n.headline || '', 180, n.headline || '');
     return `<div class="tk-card ${n.urgent?'urgent':''} ${n.url?'clickable':''}"${urlAttr}><span class="tk-src ${sc}">${(n.source||'NEWS').substring(0,12)}</span><span class="tk-time">${age}</span><div class="tk-head"${headline.titleAttr}>${headline.html}</div>${n.url?'<span class="tk-link">&#8599;</span>':''}</div>`;
   }).join('');
   const tickerDuration = Math.max(20, feed.length * 2.5);
@@ -1584,9 +1584,11 @@ function getAge(d){const ms=Date.now()-new Date(d).getTime();const h=Math.floor(
 function cleanText(t){return String(t||'').replace(/&#39;/g,"'").replace(/&#33;/g,"!").replace(/&amp;/g,"&").replace(/<[^>]+>/g,'')}
 function escapeHtml(t){return cleanText(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 function isZhLocale(){return window.__CRUCIX_LOCALE__?.meta?.code === 'zh'}
-function localizedFeedText(raw, maxLen=180){
-  const original = cleanText(raw).replace(/\s+/g,' ').trim().substring(0,maxLen);
-  const localized = isZhLocale() ? zhOsintText(original) : original;
+function localizedFeedText(raw, maxLen=180, originalRaw=null){
+  const original = cleanText(originalRaw ?? raw).replace(/\s+/g,' ').trim().substring(0,maxLen);
+  const display = cleanText(raw).replace(/\s+/g,' ').trim().substring(0,maxLen);
+  const hasServerTranslation = originalRaw !== null && display && display !== original;
+  const localized = isZhLocale() ? (hasServerTranslation ? display : zhOsintText(display || original)) : (display || original);
   const titleAttr = localized && localized !== original ? ` title="${escapeHtml(original)}"` : '';
   return {html: escapeHtml(localized || original), titleAttr};
 }
@@ -1675,7 +1677,7 @@ function buildOsintPanel(panelClass='', maxHeight=260){
     const age=p.date?getAge(p.date):'';
     const flags=(p.urgentFlags||[]).map(f=>`<span class="tk-src tg" style="margin-right:2px">${escapeHtml(zhUrgentFlag(f))}</span>`).join('');
     const srcCls=p.isWho?'style="color:#69f0ae;border-color:rgba(105,240,174,0.4)"':'class="tk-src tg"';
-    const body = localizedFeedText(p.text || '', 180);
+    const body = localizedFeedText(p.textZh || p.titleZh || p.text || '', 180, p.text || p.title || '');
     return `<div class="tk-card ${isU?'urgent':''}"><span ${srcCls}>${(p.channel||'OSINT').toUpperCase().substring(0,14)}</span>${views?`<span class="tk-src other">${views}</span>`:''}<span class="tk-time">${age}</span>${flags}<div class="tk-head"${body.titleAttr}>${body.html}</div></div>`;
   }).join('');
   const osintDuration=Math.max(25,osintItems.length*3);
