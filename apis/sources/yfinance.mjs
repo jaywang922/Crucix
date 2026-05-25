@@ -28,6 +28,18 @@ const SYMBOLS = {
   'ETH-USD': 'Ethereum',
   // Volatility
   '^VIX': 'VIX',
+  // FX
+  'TWD=X': 'USD/TWD',
+  'JPY=X': 'USD/JPY',
+  'CNY=X': 'USD/CNY',
+  'EURUSD=X': 'EUR/USD',
+  // Taiwan equities
+  '^TWII': 'TAIEX',
+  '0050.TW': 'Yuanta Taiwan 50',
+  '2330.TW': 'TSMC',
+  '2317.TW': 'Hon Hai',
+  '2454.TW': 'MediaTek',
+  '2303.TW': 'UMC',
 };
 
 async function fetchQuote(symbol) {
@@ -122,6 +134,8 @@ export async function collect() {
     commodities: pickGroup(quotes, ['GC=F', 'SI=F', 'CL=F', 'BZ=F', 'NG=F']),
     crypto: pickGroup(quotes, ['BTC-USD', 'ETH-USD']),
     volatility: pickGroup(quotes, ['^VIX']),
+    fx: pickGroup(quotes, ['TWD=X', 'JPY=X', 'CNY=X', 'EURUSD=X']),
+    taiwan: pickGroup(quotes, ['^TWII', '0050.TW', '2330.TW', '2317.TW', '2454.TW', '2303.TW']),
   };
 }
 

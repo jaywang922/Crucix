@@ -31,6 +31,7 @@ AGENTS.md
 .playwright-cli/
 
 # Logs
+logs/
 *.log
 npm-debug.log*
 

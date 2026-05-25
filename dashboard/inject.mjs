@@ -546,23 +546,19 @@ export async function synthesize(data) {
   // === Yahoo Finance live market data ===
   const yfData = data.sources.YFinance || {};
   const yfQuotes = yfData.quotes || {};
+  const compactQuote = q => ({
+    symbol: q.symbol, name: q.name, price: q.price,
+    change: q.change, changePct: q.changePct,
+    currency: q.currency, exchange: q.exchange,
+    history: q.history || [],
+  });
   const markets = {
-    indexes: (yfData.indexes || []).map(q => ({
-      symbol: q.symbol, name: q.name, price: q.price,
-      change: q.change, changePct: q.changePct, history: q.history || []
-    })),
-    rates: (yfData.rates || []).map(q => ({
-      symbol: q.symbol, name: q.name, price: q.price,
-      change: q.change, changePct: q.changePct
-    })),
-    commodities: (yfData.commodities || []).map(q => ({
-      symbol: q.symbol, name: q.name, price: q.price,
-      change: q.change, changePct: q.changePct, history: q.history || []
-    })),
-    crypto: (yfData.crypto || []).map(q => ({
-      symbol: q.symbol, name: q.name, price: q.price,
-      change: q.change, changePct: q.changePct
-    })),
+    indexes: (yfData.indexes || []).map(compactQuote),
+    rates: (yfData.rates || []).map(compactQuote),
+    commodities: (yfData.commodities || []).map(compactQuote),
+    crypto: (yfData.crypto || []).map(compactQuote),
+    fx: (yfData.fx || []).map(compactQuote),
+    taiwan: (yfData.taiwan || []).map(compactQuote),
     vix: yfQuotes['^VIX'] ? {
       value: yfQuotes['^VIX'].price,
       change: yfQuotes['^VIX'].change,
