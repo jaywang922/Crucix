@@ -1450,7 +1450,8 @@ function renderLower(){
     const sc = srcClass(n.source);
     const age = n.timestamp ? getAge(n.timestamp) : '';
     const urlAttr = n.url ? ` data-url="${String(n.url).replace(/&/g,'&amp;').replace(/"/g,'&quot;')}"` : '';
-    return `<div class="tk-card ${n.urgent?'urgent':''} ${n.url?'clickable':''}"${urlAttr}><span class="tk-src ${sc}">${(n.source||'NEWS').substring(0,12)}</span><span class="tk-time">${age}</span><div class="tk-head">${cleanText(n.headline||'')}</div>${n.url?'<span class="tk-link">&#8599;</span>':''}</div>`;
+    const headline = localizedFeedText(n.headline || '', 180);
+    return `<div class="tk-card ${n.urgent?'urgent':''} ${n.url?'clickable':''}"${urlAttr}><span class="tk-src ${sc}">${(n.source||'NEWS').substring(0,12)}</span><span class="tk-time">${age}</span><div class="tk-head"${headline.titleAttr}>${headline.html}</div>${n.url?'<span class="tk-link">&#8599;</span>':''}</div>`;
   }).join('');
   const tickerDuration = Math.max(20, feed.length * 2.5);
 
@@ -1579,8 +1580,41 @@ function renderRight(){
 }
 
 // === HELPERS ===
-function getAge(d){const ms=Date.now()-new Date(d).getTime();const h=Math.floor(ms/3600000);if(h<1)return 'just now';if(h<24)return h+'h ago';return Math.floor(h/24)+'d ago'}
-function cleanText(t){return t.replace(/&#39;/g,"'").replace(/&#33;/g,"!").replace(/&amp;/g,"&").replace(/<[^>]+>/g,'')}
+function getAge(d){const ms=Date.now()-new Date(d).getTime();const h=Math.floor(ms/3600000);if(h<1)return t('time.justNow','just now');if(h<24)return isZhLocale()?`${h} 小時前`:h+'h ago';const days=Math.floor(h/24);return isZhLocale()?`${days} 天前`:days+'d ago'}
+function cleanText(t){return String(t||'').replace(/&#39;/g,"'").replace(/&#33;/g,"!").replace(/&amp;/g,"&").replace(/<[^>]+>/g,'')}
+function escapeHtml(t){return cleanText(t).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+function isZhLocale(){return window.__CRUCIX_LOCALE__?.meta?.code === 'zh'}
+function localizedFeedText(raw, maxLen=180){
+  const original = cleanText(raw).replace(/\s+/g,' ').trim().substring(0,maxLen);
+  const localized = isZhLocale() ? zhOsintText(original) : original;
+  const titleAttr = localized && localized !== original ? ` title="${escapeHtml(original)}"` : '';
+  return {html: escapeHtml(localized || original), titleAttr};
+}
+function zhOsintText(input){
+  let text = cleanText(input);
+  const replacements = [
+    [/live updates?/ig,'即時更新'],[/breaking/ig,'快訊'],[/just in/ig,'最新消息'],[/confirmed/ig,'證實'],[/reports?/ig,'報導'],[/according to/ig,'根據'],[/sources?/ig,'消息來源'],
+    [/United States|U\.S\.|US\b/ig,'美國'],[/United Kingdom|UK\b/ig,'英國'],[/European Union|EU\b/ig,'歐盟'],[/NATO/ig,'北約'],[/UN\b/ig,'聯合國'],[/WHO\b/ig,'WHO'],
+    [/Taiwan Strait/ig,'台海'],[/South China Sea/ig,'南海'],[/Middle East/ig,'中東'],[/Red Sea/ig,'紅海'],[/Strait of Hormuz/ig,'荷莫茲海峽'],[/Black Sea/ig,'黑海'],[/Baltic Sea/ig,'波羅的海'],
+    [/Taiwan/ig,'台灣'],[/China/ig,'中國'],[/Japan/ig,'日本'],[/South Korea/ig,'南韓'],[/North Korea/ig,'北韓'],[/India/ig,'印度'],[/Australia/ig,'澳洲'],
+    [/Ukraine/ig,'烏克蘭'],[/Russia/ig,'俄羅斯'],[/Iran/ig,'伊朗'],[/Israel/ig,'以色列'],[/Gaza/ig,'加薩'],[/Lebanon/ig,'黎巴嫩'],[/Syria/ig,'敘利亞'],[/Iraq/ig,'伊拉克'],[/Libya/ig,'利比亞'],
+    [/Brazil/ig,'巴西'],[/Bolivia/ig,'玻利維亞'],[/Panama/ig,'巴拿馬'],[/Cuba/ig,'古巴'],[/Kenya/ig,'肯亞'],[/Congo/ig,'剛果'],[/Madagascar/ig,'馬達加斯加'],[/France/ig,'法國'],[/Italy/ig,'義大利'],[/Finland/ig,'芬蘭'],
+    [/Trump/ig,'川普'],[/Zelensky/ig,'澤倫斯基'],[/Putin/ig,'普丁'],[/Tehran/ig,'德黑蘭'],[/Kharkov|Kharkiv/ig,'哈爾科夫'],
+    [/fighter jets?/ig,'戰鬥機'],[/aircraft/ig,'軍機'],[/drones?/ig,'無人機'],[/missiles?/ig,'飛彈'],[/ballistic missiles?/ig,'彈道飛彈'],[/cruise missiles?/ig,'巡弋飛彈'],
+    [/air defenses?/ig,'防空系統'],[/search and rescue|rescue operation|rescue efforts/ig,'搜救行動'],[/shot down|downed/ig,'擊落'],[/intercepted|neutralized/ig,'攔截'],[/launch(?:es|ed)?/ig,'發動'],
+    [/strike(?:s)?/ig,'攻擊'],[/attack(?:s|ed)?/ig,'攻擊'],[/bombardment/ig,'砲擊'],[/explosion/ig,'爆炸'],[/mobilization/ig,'動員'],[/blockade/ig,'封鎖'],[/coup/ig,'政變'],[/assassination/ig,'暗殺'],
+    [/tariffs?/ig,'關稅'],[/budget/ig,'預算'],[/military/ig,'軍事'],[/defen[cs]e/ig,'國防'],[/oil/ig,'石油'],[/fuel/ig,'燃料'],[/gas/ig,'天然氣'],[/energy sector/ig,'能源部門'],[/pharmaceutical/ig,'製藥'],
+    [/court/ig,'法院'],[/president/ig,'總統'],[/authorities/ig,'當局'],[/government/ig,'政府'],[/border/ig,'邊境'],[/warehouse/ig,'倉庫'],[/factory/ig,'工廠'],[/bridge(?:s)?/ig,'橋梁'],
+    [/killed/ig,'死亡'],[/injured/ig,'受傷'],[/suspended/ig,'暫停'],[/withdraw/ig,'退出'],[/challenge/ig,'挑戰'],[/warn(?:s|ed)?/ig,'警告'],[/says?/ig,'表示'],[/seeks?/ig,'尋求'],[/vows?/ig,'承諾'],
+    [/after/ig,'在...之後'],[/over/ig,'在...上空'],[/near/ig,'鄰近'],[/amid/ig,'在...之際'],[/as /ig,'隨著 '],[/with /ig,'伴隨 '],[/from /ig,'來自 '],[/into /ig,'進入 ']
+  ];
+  for (const [pattern, replacement] of replacements) text = text.replace(pattern, replacement);
+  return text.replace(/\s+/g,' ').trim();
+}
+function zhUrgentFlag(flag){
+  const map={missile:'飛彈',strike:'攻擊',drone:'無人機',confirmed:'證實',advance:'推進',coup:'政變',assassination:'暗殺',mobilization:'動員',intercept:'攔截',blockade:'封鎖',breaking:'快訊',bombardment:'砲擊',alert:'警示',urgent:'緊急',flash:'快訊'};
+  return isZhLocale() ? (map[String(flag).toLowerCase()] || zhOsintText(flag)) : flag;
+}
 function safeExternalUrl(raw){try{const u=new URL(raw,location.href);return u.protocol==='http:'||u.protocol==='https:'?u.toString():null}catch{return null}}
 
 // === BOOT SEQUENCE ===
@@ -1639,9 +1673,10 @@ function buildOsintPanel(panelClass='', maxHeight=260){
     const isU=p.urgentFlags&&p.urgentFlags.length>0;
     const views=p.views?p.views>=1000?`${(p.views/1000).toFixed(0)}K`:p.views:'';
     const age=p.date?getAge(p.date):'';
-    const flags=(p.urgentFlags||[]).map(f=>`<span class="tk-src tg" style="margin-right:2px">${f}</span>`).join('');
+    const flags=(p.urgentFlags||[]).map(f=>`<span class="tk-src tg" style="margin-right:2px">${escapeHtml(zhUrgentFlag(f))}</span>`).join('');
     const srcCls=p.isWho?'style="color:#69f0ae;border-color:rgba(105,240,174,0.4)"':'class="tk-src tg"';
-    return `<div class="tk-card ${isU?'urgent':''}"><span ${srcCls}>${(p.channel||'OSINT').toUpperCase().substring(0,14)}</span>${views?`<span class="tk-src other">${views}</span>`:''}<span class="tk-time">${age}</span>${flags}<div class="tk-head">${cleanText((p.text||'').substring(0,160))}</div></div>`;
+    const body = localizedFeedText(p.text || '', 180);
+    return `<div class="tk-card ${isU?'urgent':''}"><span ${srcCls}>${(p.channel||'OSINT').toUpperCase().substring(0,14)}</span>${views?`<span class="tk-src other">${views}</span>`:''}<span class="tk-time">${age}</span>${flags}<div class="tk-head"${body.titleAttr}>${body.html}</div></div>`;
   }).join('');
   const osintDuration=Math.max(25,osintItems.length*3);
   return `<div class="g-panel ${panelClass}" style="display:flex;flex-direction:column">
